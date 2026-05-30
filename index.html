@@ -142,13 +142,12 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         });
 
         // Traer datos de Supabase y calcular stock actual
-        async function cargarProductos() {
-            const { data, error } = await supabase
-                .from('productos')
-                .select(`
-                    id, nombre, unidad_medida, stock_minimo, stock_inicial,
-                    movimientos (tipo, cantidad)
-                `);
+       async function cargarProductos() {
+    const { data, error } = await supabaseClient.from('productos') // <-- CAMBIAR POR supabaseClient
+        .select(`
+            id, nombre, unidad_medida, stock_minimo, stock_inicial,
+            movimientos (tipo, cantidad)
+        `);
 
             if (error) {
                 console.error("Error cargando productos:", error);
