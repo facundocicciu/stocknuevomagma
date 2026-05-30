@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viandas Magma - Control de Stock</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800">
+
+    <nav class="bg-orange-600 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-wider">🔥 VIANDAS MAGMA</h1>
+            <span class="bg-orange-700 px-3 py-1 rounded text-sm font-semibold">Panel de Stock</span>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-4 md:p-6 space-y-10">
+
+        <section id="alertas-section" class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-amber-500" style="display: none;">
+            <div class="flex items-center space-x-2 mb-4">
+                <span class="text-2xl">🚨</span>
+                <h2 class="text-xl font-bold text-gray-900">Estadísticas: Alertas de Reposición (Poco Stock)</h2>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">Los siguientes insumos se encuentran por debajo del stock mínimo requerido:</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                </div>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <section id="gestion-productos" class="lg:col-span-1 bg-white p-6 rounded-lg shadow-sm space-y-4">
+                <h2 class="text-lg font-bold text-gray-900 border-b pb-2">📦 Añadir Producto</h2>
+                
+                <form id="form-producto" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Nombre del Producto</label>
+                        <input type="text" id="p-nombre" required placeholder="Ej: Pechuga de Pollo" class="w-full p-2 border rounded-md focus:outline-none focus:border-orange-500 text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Unidad de Medida</label>
+                        <select id="p-unidad" class="w-full p-2 border rounded-md bg-white focus:outline-none focus:border-orange-500 text-sm">
+                            <option value="unidades">Unidades</option>
+                            <option value="kilos">Kilos</option>
+                            <option value="gramos">Gramos</option>
+                            <option value="litros">Litros</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Stock Mínimo</label>
+                            <input type="number" id="p-minimo" min="0" required placeholder="Ej: 10" class="w-full p-2 border rounded-md focus:outline-none focus:border-orange-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Stock Inicial</label>
+                            <input type="number" id="p-inicial" min="0" required placeholder="Ej: 15" class="w-full p-2 border rounded-md focus:outline-none focus:border-orange-500 text-sm">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-orange-600 text-white font-bold py-2 px-4 rounded-md hover:bg-orange-700 transition duration-200 text-sm">
+                        Guardar Producto
+                    </button>
+                </form>
+            </section>
+
+            <section id="movimientos-stock" class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm space-y-4">
+                <h2 class="text-lg font-bold text-gray-900 border-b pb-2">🔄 Registrar Entrada o Salida</h2>
+                
+                <form id="form-movimiento" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Seleccionar Producto</label>
+                        <select id="m-producto" required class="w-full p-2 border rounded-md bg-white focus:outline-none focus:border-orange-500 text-sm">
+                            </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Operación</label>
+                        <select id="m-tipo" class="w-full p-2 border rounded-md bg-white focus:outline-none focus:border-orange-500 text-sm font-semibold text-center">
+                            <option value="entrada" class="text-green-600">➕ SUMAR (Entrada)</option>
+                            <option value="salida" class="text-red-600">➖ RESTAR (Salida)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Cantidad</label>
+                        <input type="number" id="m-cantidad" min="1" required placeholder="Cantidad" class="w-full p-2 border rounded-md focus:outline-none focus:border-orange-500 text-sm">
+                    </div>
+
+                    <div class="md:col-span-4 flex justify-end">
+                        <button type="submit" class="w-full md:w-auto bg-gray-800 text-white font-bold py-2 px-6 rounded-md hover:bg-gray-950 transition duration-200 text-sm">
+                            Registrar Movimiento
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+        </div>
+
+        <section id="tabla-productos" class="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <h2 class="text-lg font-bold text-gray-900">📋 Inventario de Insumos</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full table-auto text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider border-b">
+                            <th class="p-3">Producto</th>
+                            <th class="p-3">Unidad</th>
+                            <th class="p-3 text-center">Stock Mínimo</th>
+                            <th class="p-3 text-center">Stock Actual</th>
+                            <th class="p-3 text-center">Estado</th>
+                            <th class="p-3 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center py-6 text-xs text-gray-500">
+        &copy; 2026 Viandas Magma - Sistema de Gestión Interno.
+    </footer>
+
+    <script>
+        // CONFIGURACIÓN DE CREDENCIALES
+        const SUPABASE_URL = "https://ttbtpfesxpwqbpbxftns.supabase.co"; 
+        const SUPABASE_ANON_KEY = "sb_publishable_o_bP_z3onP67-uE9MLloyw_5Zdg4ATw"; 
+
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let productos = [];
+
+        // Iniciar la app al cargar la página
+        document.addEventListener("DOMContentLoaded", async () => {
+            await cargarProductos();
+            configurarFormularios();
+        });
+
+        // Traer datos de Supabase y calcular stock actual
+        async function cargarProductos() {
+            const { data, error } = await supabase
+                .from('productos')
+                .select(`
+                    id, nombre, unidad_medida, stock_minimo, stock_inicial,
+                    movimientos (tipo, cantidad)
+                `);
+
+            if (error) {
+                console.error("Error cargando productos:", error);
+                alert("Error al conectar con Supabase. Revisá la URL de configuración.");
+                return;
+            }
+
+            // Mapear y procesar las entradas/salidas matemáticamente en tiempo real
+            productos = data.map(p => {
+                let stockActual = p.stock_inicial;
+                if (p.movimientos) {
+                    p.movimientos.forEach(m => {
+                        if (m.tipo === 'entrada') stockActual += Number(m.cantidad);
+                        if (m.tipo === 'salida') stockActual -= Number(m.cantidad);
+                    });
+                }
+                return { ...p, stock_actual: stockActual };
+            });
+
+            renderizarInterfaz();
+        }
+
+        // Renderizar tablas, selectores y alertas
+        function renderizarInterfaz() {
+            const tablaBody = document.querySelector("#tabla-productos tbody");
+            const selectProductos = document.querySelector("#m-producto");
+            const alertasSection = document.getElementById("alertas-section");
+            const contenedorAlertas = alertasSection.querySelector(".grid");
+
+            // Limpiar vistas
+            tablaBody.innerHTML = "";
+            selectProductos.innerHTML = '<option value="" disabled selected>Seleccioná un producto...</option>';
+            contenedorAlertas.innerHTML = "";
+            let hayAlertas = false;
+
+            productos.forEach(p => {
+                // 1. Agregar al selector de movimientos
+                const option = document.createElement("option");
+                option.value = p.id;
+                option.textContent = p.nombre;
+                selectProductos.appendChild(option);
+
+                // 2. Control de Alertas (Estadísticas de bajo stock)
+                const esCritico = p.stock_actual < p.stock_minimo;
+                let estadoEtiqueta = `<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-medium">OK</span>`;
+                
+                if (esCritico) {
+                    hayAlertas = true;
+                    estadoEtiqueta = `<span class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full font-medium">Escaso</span>`;
+                    
+                    contenedorAlertas.innerHTML += `
+                        <div class="bg-amber-50 border border-amber-200 p-4 rounded-md flex justify-between items-center">
+                            <div>
+                                <h4 class="font-bold text-amber-900">${p.nombre}</h4>
+                                <p class="text-sm text-amber-700">Stock Actual: <span class="font-bold">${p.stock_actual}</span> / Mínimo: ${p.stock_minimo} (${p.unidad_medida})</p>
+                            </div>
+                            <span class="bg-amber-200 text-amber-800 text-xs px-2 py-1 rounded font-bold uppercase">Reponer</span>
+                        </div>
+                    `;
+                }
+
+                // 3. Insertar fila en la tabla general
+                tablaBody.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3 font-semibold text-gray-900">${p.nombre}</td>
+                        <td class="p-3 text-gray-500 capitalize">${p.unidad_medida}</td>
+                        <td class="p-3 text-center">${p.stock_minimo}</td>
+                        <td class="p-3 text-center font-bold ${esCritico ? 'text-red-600' : 'text-green-600'}">${p.stock_actual}</td>
+                        <td class="p-3 text-center">${estadoEtiqueta}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="eliminarProducto(${p.id})" class="text-red-600 hover:text-red-800 hover:underline font-medium">Eliminar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // Mostrar el bloque de alertas sólo si hay productos en estado crítico
+            alertasSection.style.display = hayAlertas ? "block" : "none";
+        }
+
+        // Configurar los formularios de envío (Event Listeners)
+        function configurarFormularios() {
+            // Guardar Nuevo Producto
+            document.getElementById("form-producto").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                
+                const nuevoProducto = {
+                    nombre: document.getElementById("p-nombre").value,
+                    unidad_medida: document.getElementById("p-unidad").value,
+                    stock_minimo: Number(document.getElementById("p-minimo").value),
+                    stock_inicial: Number(document.getElementById("p-inicial").value)
+                };
+
+                const { error } = await supabase.from('productos').insert([nuevoProducto]);
+                
+                if (error) {
+                    alert("Error al guardar el producto en Supabase.");
+                    console.error(error);
+                } else {
+                    e.target.reset();
+                    await cargarProductos();
+                }
+            });
+
+            // Guardar Nuevo Movimiento (Entrada/Salida)
+            document.getElementById("form-movimiento").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                
+                const nuevoMovimiento = {
+                    producto_id: Number(document.getElementById("m-producto").value),
+                    tipo: document.getElementById("m-tipo").value,
+                    cantidad: Number(document.getElementById("m-cantidad").value)
+                };
+
+                const { error } = await supabase.from('movimientos').insert([nuevoMovimiento]);
+
+                if (error) {
+                    alert("Error al registrar el movimiento.");
+                    console.error(error);
+                } else {
+                    e.target.reset();
+                    await cargarProductos();
+                }
+            });
+        }
+
+        // Eliminar Producto
+        async function eliminarProducto(id) {
+            if (confirm("¿Estás seguro de eliminar este insumo? Se borrará también todo su historial de movimientos.")) {
+                // Elimina en cascada lógica los movimientos primero para evitar errores de clave foránea
+                await supabase.from('movimientos').delete().eq('producto_id', id);
+                const { error } = await supabase.from('productos').delete().eq('id', id);
+                
+                if (error) {
+                    alert("Error al intentar eliminar.");
+                    console.error(error);
+                } else {
+                    await cargarProductos();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
