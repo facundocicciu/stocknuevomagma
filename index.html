@@ -241,7 +241,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                     stock_inicial: Number(document.getElementById("p-inicial").value)
                 };
 
-                const { error } = await supabase.from('productos').insert([nuevoProducto]);
+                const { error } = await supabaseClient.from('productos').insert([nuevoProducto]);
                 
                 if (error) {
                     alert("Error al guardar el producto en Supabase.");
@@ -262,7 +262,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                     cantidad: Number(document.getElementById("m-cantidad").value)
                 };
 
-                const { error } = await supabase.from('movimientos').insert([nuevoMovimiento]);
+                const { error } = await supabaseClient.from('movimientos').insert([nuevoMovimiento]);
 
                 if (error) {
                     alert("Error al registrar el movimiento.");
@@ -278,8 +278,8 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         async function eliminarProducto(id) {
             if (confirm("¿Estás seguro de eliminar este insumo? Se borrará también todo su historial de movimientos.")) {
                 // Elimina en cascada lógica los movimientos primero para evitar errores de clave foránea
-                await supabase.from('movimientos').delete().eq('producto_id', id);
-                const { error } = await supabase.from('productos').delete().eq('id', id);
+                await supabaseClient.from('movimientos').delete().eq('producto_id', id);
+                const { error } = await supabaseClient.from('productos').delete().eq('id', id);
                 
                 if (error) {
                     alert("Error al intentar eliminar.");
